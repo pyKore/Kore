@@ -1,6 +1,6 @@
-# Kernel
+# Kore
 
-**Kernel** is a simplified implementation of a blockchain in Python.  
+**Kore** is a simplified implementation of a blockchain in Python.  
 This project is directly inspired by the consensus mechanism and chain structure of **Bitcoin**.  
 The consensus is based on the **Proof-of-Work algorithm**, where miners must solve complex cryptographic problems to validate new blocks and add them to the chain.  
 The validation process uses the SHA-256 function to ensure the integrity of each block's data. Each block contains a hash of the previous block, creating a secure and immutable chain of blocks.
@@ -22,11 +22,11 @@ By adopting this mechanism, my project simulates adding transactions to a block,
 
 The project is now structured around a client-daemon architecture for better modularity and extensibility:
 
-- **Kernel Daemon** (KernelD.py): The core of the system. It manages the P2P network, the mining process, the blockchain database, and exposes an API for the explorer.
+- **Kore Daemon** (KoreD.py): The core of the system. It manages the P2P network, the mining process, the blockchain database, and exposes an API for the explorer.
 
-- **Kernel CLI** (KernelCLI.py): A command-line client that communicates with the daemon to perform actions like starting/stopping mining, creating a wallet, or sending transactions.
+- **Kore CLI** (KoreCLI.py): A command-line client that communicates with the daemon to perform actions like starting/stopping mining, creating a wallet, or sending transactions.
 
-- **API** (serverAPI.py): A Flask API that allows querying the state of the blockchain. It is designed to be used by block explorers like the Kernel Explorer.
+- **API** (serverAPI.py): A Flask API that allows querying the state of the blockchain. It is designed to be used by block explorers like the Kore Explorer.
 
 ## Features
 
@@ -57,8 +57,8 @@ Before getting started, ensure you have the following installed:
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/0xnohan/Kernel.git
-   cd Kernel
+   git clone https://github.com/pyKore/Kore.git
+   cd Kore
 
 2. Create a virtual environment and activate it in the terminal:
    ```bash
@@ -73,10 +73,10 @@ Before getting started, ensure you have the following installed:
     
  1. To test the project, start the Client and follow the instructions:
     ```bash
-    python KernelCLI.py
+    python KoreCLI.py
 
- 2. For a graphical interface, use the Kernel Explorer:
-  - Download the project here: [Kernel Explorer](https://github.com/0xnohan/KernelExplorer):
+ 2. For a graphical interface, use the Kore Explorer:
+  - Download the project here: [Kore Explorer](https://github.com/pyKore/KoreExplorer):
   - Run it:
     ```bash
     npm install
@@ -92,7 +92,7 @@ Before getting started, ensure you have the following installed:
 
   - Run: 
     ```bash
-    python KernelCLI.py # in each folder
+    python KoreCLI.py # in each folder
     
   - Create a new wallet and change miner address in settings to the name of the new wallet 
 
@@ -100,7 +100,7 @@ Before getting started, ensure you have the following installed:
 
 ### Current Version
 
-- **Kernel Version**: 1.33.0
+- **Kore Version**: 1.33.0
 - **Date**: October 2025
 
 **New Changes**:
@@ -109,7 +109,7 @@ Before getting started, ensure you have the following installed:
 - Add ChainManager 
 - Add second chain for PoW when 2 miners find a block in the same time (taking the chain with the longest PoW)
 - Adding separate Thread and Queue for the deamon process
-- Split mining process and Core process -> Creating KernelX (miner)
+- Split mining process and Core process -> Creating KoreX (miner)
 - Major bugs fixs:
    - Deleting elleptic_curve.py -> import secp256k1
    - Adding atomic operation for blocks & txs -> Avoiding double spending problem
@@ -135,7 +135,7 @@ Before getting started, ensure you have the following installed:
 ### Previous Versions
 
 
-#### Kernel 1.23
+#### Kore 1.23
 - **Date**: September 2025
 
 **Changes**:
@@ -145,11 +145,11 @@ Before getting started, ensure you have the following installed:
 - Ability to create a wallet and send coins directly from the CLI
 - Minor bugs fix
 
-#### Kernel 1.10
+#### Kore 1.10
 - **Date**: August 2025
 
 **Changes**:
-- Kernel Blockchain
+- Kore Blockchain
 - Complete code refactoring
 - Blockchain explorer redesign
 - Change in the reward system (deflationary)
