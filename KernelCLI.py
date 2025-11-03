@@ -77,13 +77,13 @@ def start_daemon(host, rpc_port):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.settimeout(1)
             s.connect((host, rpc_port))
-        logger.info("Kernel Daemon is already running.")
-        print(f"{Colors.OKGREEN}Kernel Daemon is already running.{Colors.ENDC}")
+        logger.info("Kore Daemon is already running.")
+        print(f"{Colors.OKGREEN}Kore Daemon is already running.{Colors.ENDC}")
         return None
     except (ConnectionRefusedError, socket.timeout):
-        logger.info("Starting Kernel Daemon...")
-        print(f"{Colors.WARNING}Starting Kernel Daemon...{Colors.ENDC}")
-        daemon_script_path = os.path.join("src", "node", "kerneld.py")
+        logger.info("Starting Kore Daemon...")
+        print(f"{Colors.WARNING}Starting Kore Daemon...{Colors.ENDC}")
+        daemon_script_path = os.path.join("src", "node", "koreD.py")
         return start_process_in_new_terminal(daemon_script_path, "daemon")
 
 
@@ -126,7 +126,7 @@ def send_rpc_command(host, rpc_port, command):
     except ConnectionRefusedError:
         return {
             "status": "error",
-            "message": f"Connection refused. Is kerneld running on {host}:{rpc_port}?",
+            "message": f"Connection refused. Is kored running on {host}:{rpc_port}?",
         }
     except socket.timeout:
         return {
@@ -137,7 +137,7 @@ def send_rpc_command(host, rpc_port, command):
         return {"status": "error", "message": f"RPC Error: {e}"}
 
 
-class KernelCLI(Cmd):
+class KoreCLI(Cmd):
 
     _logo_printed = False
 
@@ -183,16 +183,16 @@ class KernelCLI(Cmd):
 
         if connected:
             print(
-                f"\n{Colors.OKGREEN}Connection successful{Colors.ENDC} \nWelcome to Kernel CLI !"
+                f"\n{Colors.OKGREEN}Connection successful{Colors.ENDC} \nWelcome to Kore CLI !"
             )
             print("Type 'help' or '?' for a list of commands\n")
             self.prompt = (
-                f"{Colors.BOLD}{Colors.OKCYAN}(kernel@{self.host}){Colors.ENDC} "
+                f"{Colors.BOLD}{Colors.OKCYAN}(kore@{self.host}){Colors.ENDC} "
             )
         else:
             print(f"\n{Colors.FAIL}Failed to connect to daemon{Colors.ENDC}")
-            print("Please check config.ini or start kerneld.py manually")
-            self.prompt = f"{Colors.BOLD}{Colors.FAIL}(kernel-offline){Colors.ENDC} "
+            print("Please check config.ini or start koreD.py manually")
+            self.prompt = f"{Colors.BOLD}{Colors.FAIL}(kore-offline){Colors.ENDC} "
 
     def postloop(self):
         print(f"\n{Colors.WARNING}Shutting down client...{Colors.ENDC}")
@@ -231,7 +231,7 @@ class KernelCLI(Cmd):
             return None
 
     def do_help(self, arg):
-        print(f"\n{Colors.BOLD}Kernel CLI Help Menu{Colors.ENDC}")
+        print(f"\n{Colors.BOLD}Kore CLI Help Menu{Colors.ENDC}")
         print(
             "Type a command and press Enter. Most commands support guided mode (no arguments)"
         )
@@ -240,7 +240,7 @@ class KernelCLI(Cmd):
             "send [from] [to] [amount]": "Send KOR to a specified address",
             "createwallet [name]": "Create a new wallet",
             "listwallets": "List all wallets and their balances",
-            "startminer": "Starts the miner process (KernelX)",
+            "startminer": "Starts the miner process (KoreX)",
             "stopminer": "Stops the miner process",
             "getmempool": "List all transactions in the mempool",
             "getheight": "Get the current blockchain height",
@@ -250,7 +250,7 @@ class KernelCLI(Cmd):
             "ping": "Check connection with the daemon",
             "help": "Show help menu",
             "clear": "Clear the terminal screen",
-            "exit": "Exit the Kernel CLI and shutdown the daemon",
+            "exit": "Exit the Kore CLI and shutdown the daemon",
         }
         for cmd, desc in cmds.items():
             print(f"  {Colors.OKCYAN}{cmd:<28}{Colors.ENDC} {desc}")
@@ -266,7 +266,7 @@ class KernelCLI(Cmd):
             mempool = info.get("mempool_size", "N/A")
             wallets = info.get("wallet_count", "N/A")
 
-            print(f"\n  {Colors.BOLD}--- Kernel Node Status ---{Colors.ENDC}")
+            print(f"\n  {Colors.BOLD}--- Kore Node Status ---{Colors.ENDC}")
             print(
                 f"  {Colors.OKCYAN}Host:{Colors.ENDC}         {self.host}:{self.rpc_port}"
             )
@@ -495,13 +495,13 @@ class KernelCLI(Cmd):
             print(f"{Colors.WARNING}Miner process is already running{Colors.ENDC}")
             return
 
-        print("Starting KernelX miner process in a new window...")
-        miner_script_path = os.path.join("KernelX", "main.py")
+        print("Starting KoreX miner process in a new window...")
+        miner_script_path = os.path.join("KoreX", "main.py")
         if os.path.exists(miner_script_path):
             start_process_in_new_terminal(miner_script_path, "miner")
             print(f"{Colors.OKGREEN}Miner process launched.{Colors.ENDC}")
         else:
-            print(f"{Colors.FAIL}Error:{Colors.ENDC} KernelX/main.py not found")
+            print(f"{Colors.FAIL}Error:{Colors.ENDC} KoreX/main.py not found")
 
     def do_stopminer(self, arg):
         stop_miner_process()
@@ -649,7 +649,7 @@ if __name__ == "__main__":
     if sys.platform == "win32":
         os.system("")
 
-    cli_instance = KernelCLI()
+    cli_instance = KoreCLI()
     try:
         cli_instance.cmdloop()
     except KeyboardInterrupt:

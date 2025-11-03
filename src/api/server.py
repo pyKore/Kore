@@ -147,8 +147,8 @@ def get_miner_address(block):
 
     Each endpoint returns JSON data suitable for frontend
     Feel free to expand with more endpoints as needed
-    Don't forget to download the Kernel Explorer or create your own frontend to use this API
-    https://github.com/0xnohan/KernelExplorer
+    Don't forget to download the Kore Explorer or create your own frontend to use this API
+    https://github.com/pyKore/Kore
 """
 
 
