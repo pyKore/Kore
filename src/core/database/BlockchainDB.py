@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 from sqlitedict import SqliteDict
 
 from src.core.database.BaseDB import BaseDB
-from utils.crypto.serialization import bits_to_target
+from src.utils.crypto.serialization import bits_to_target
 
 
 class BlockchainDB(BaseDB):

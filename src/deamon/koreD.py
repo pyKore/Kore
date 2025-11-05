@@ -7,7 +7,7 @@ from threading import Event, Thread
 
 sys.path.append(os.getcwd())
 
-from net.services.api_service import main as web_main
+from src.net.services.api_service import main as web_main
 from src.core.chain.managers.ChainManager import ChainManager
 from src.core.chain.managers.UTXOManager import UTXOManager
 from src.core.database.TxIndexDB import TxIndexDB

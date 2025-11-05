@@ -5,8 +5,8 @@ logger = logging.getLogger(__name__)
 from src.core.chain.chainparams import MAX_BLOCK_SIZE
 from src.core.txs.coinbase_tx import CoinbaseTx
 from src.core.txs.transaction import Tx
-from utils.crypto.crypto_hash import hash256
-from utils.crypto.serialization import bits_to_target, little_endian_to_int, merkle_root
+from src.utils.crypto.crypto_hash import hash256
+from src.utils.crypto.serialization import bits_to_target, little_endian_to_int, merkle_root
 
 
 def check_pow(block_header):
