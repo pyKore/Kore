@@ -10,7 +10,7 @@ from src.core.chain.chainparams import KOR
 from src.core.chain.difficulty import calculate_new_bits
 from src.core.chain.mempool import Mempool
 from src.core.chain.primitives.block import Block
-from src.core.database import AccountDB
+from src.core.database.AccountDB import AccountDB
 from src.core.database.BlockchainDB import BlockchainDB
 from src.core.txs.coinbase_tx import CoinbaseTx
 from src.core.txs.send import Send

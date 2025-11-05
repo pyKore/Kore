@@ -1,25 +1,31 @@
 import hashlib
 import time
+import uvicorn
 from datetime import datetime, timezone
-
-from flask import Flask, jsonify
-from flask_cors import CORS
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from src.core.database.BlockchainDB import BlockchainDB
 from src.utils.crypto.serialization import decode_base58, encode_base58
 
-app = Flask(__name__)
-CORS(app)
-MAIN_PREFIX = b"\x6c"
-KOR = 100000000
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# try Redis
 MEMPOOL = {}
 UTXOS = {}
+
+MAIN_PREFIX = b"\x6c"
+KOR = 100000000
 BLOCKCHAIN_CACHE = {"blocks": None, "last_update": 0}
 CACHE_TIMEOUT = 10
-
-
-# ==============================================================================
-
 
 # Store blockchain data in memory for quick access
 def get_blockchain_data():
@@ -36,7 +42,7 @@ def get_blockchain_data():
                 BLOCKCHAIN_CACHE["blocks"] = blocks
                 BLOCKCHAIN_CACHE["last_update"] = now
         except Exception as e:
-            app.logger.error(f"Error while fetching blockchain data: {e}")
+            print(f"Error while fetching blockchain data: {e}") 
             return BLOCKCHAIN_CACHE["blocks"] if BLOCKCHAIN_CACHE["blocks"] else []
 
     return BLOCKCHAIN_CACHE["blocks"]
@@ -142,19 +148,11 @@ def get_miner_address(block):
 
 
 # ==============================================================================
+# API ENDPOINTS
+# ==============================================================================
 
-""" API ENDPOINTS TO INTERACT WITH THE BLOCKCHAIN
-
-    Each endpoint returns JSON data suitable for frontend
-    Feel free to expand with more endpoints as needed
-    Don't forget to download the Kore Explorer or create your own frontend to use this API
-    https://github.com/pyKore/Kore
-"""
-
-
-# get stats about the blockchain
-@app.route("/api/stats")
-def get_stats():
+@app.get("/api/stats")
+async def get_stats():
     blocks_db = get_blockchain_data()
     active_addresses = set()
     total_transactions = 0
@@ -169,21 +167,18 @@ def get_stats():
                     except (IndexError, KeyError, TypeError, ValueError):
                         continue
 
-    return jsonify(
-        {
-            "total_transactions": total_transactions,
-            "active_addresses": len(active_addresses),
-            "network_hashrate": "N/A",
-        }
-    )
+    return {
+        "total_transactions": total_transactions,
+        "active_addresses": len(active_addresses),
+        "network_hashrate": "N/A",  
+    }
 
 
-# Get blocks list of the blockchain
-@app.route("/api/blocks")
-def get_blocks():
+@app.get("/api/blocks")
+async def get_blocks():
     blocks_db = get_blockchain_data()
     if not blocks_db:
-        return jsonify([])
+        return []
 
     formatted_blocks = []
     for block in reversed(blocks_db):
@@ -200,18 +195,17 @@ def get_blocks():
                 "transaction_count": block.get("TxCount"),
                 "miner": get_miner_address(block),
                 "size_used": block_size_used,
-                "reward": 50,
+                "reward": 50, 
             }
         )
-    return jsonify(formatted_blocks)
+    return formatted_blocks
 
 
-# Get block details by its hash
-@app.route("/api/block/<block_hash>")
-def get_block_details(block_hash):
+@app.get("/api/block/{block_hash}")
+async def get_block_details(block_hash: str):
     blocks_db = get_blockchain_data()
     if not blocks_db:
-        return jsonify({"error": "Blockchain is empty"}), 404
+        raise HTTPException(status_code=404, detail="Blockchain is empty")
 
     for block in blocks_db:
         header = block.get("BlockHeader", {})
@@ -258,39 +252,36 @@ def get_block_details(block_hash):
                         {"hash": tx.get("TxId"), "inputs": inputs, "outputs": outputs}
                     )
 
-            return jsonify(
-                {
-                    "block_number": block.get("Height"),
-                    "hash": header.get("blockHash"),
-                    "previous_hash": header.get("prevBlockHash"),
-                    "confirmations": len(blocks_db) - block.get("Height"),
-                    "transaction_count": block.get("TxCount"),
-                    "miner": get_miner_address(block),
-                    "size": block.get("Blocksize"),
-                    "merkle_root": header.get("merkleRoot"),
-                    "nonce": header.get("nonce"),
-                    "timestamp": datetime.fromtimestamp(
-                        header.get("timestamp", 0), timezone.utc
-                    ).isoformat(),
-                    "transactions": formatted_txs,
-                    "reward": 50,
-                    "version": header.get("version"),
-                    "bits": header.get("bits"),
-                }
-            )
+            return {
+                "block_number": block.get("Height"),
+                "hash": header.get("blockHash"),
+                "previous_hash": header.get("prevBlockHash"),
+                "confirmations": len(blocks_db) - block.get("Height"),
+                "transaction_count": block.get("TxCount"),
+                "miner": get_miner_address(block),
+                "size": block.get("Blocksize"),
+                "merkle_root": header.get("merkleRoot"),
+                "nonce": header.get("nonce"),
+                "timestamp": datetime.fromtimestamp(
+                    header.get("timestamp", 0), timezone.utc
+                ).isoformat(),
+                "transactions": formatted_txs,
+                "reward": 50,
+                "version": header.get("version"),
+                "bits": header.get("bits"),
+            }
 
-    return jsonify({"error": "Bloc not found"}), 404
+    raise HTTPException(status_code=404, detail="Bloc not found")
 
 
-# Get the latest 50 transactions of the blockchain
-@app.route("/api/transactions")
-def get_transactions():
+@app.get("/api/transactions")
+async def get_transactions():
     blocks_db = get_blockchain_data()
     all_txs = []
     limit = 50
 
     if not blocks_db:
-        return jsonify([])
+        return []
 
     for block in reversed(blocks_db):
         if len(all_txs) >= limit:
@@ -300,15 +291,14 @@ def get_transactions():
                 break
             all_txs.append(format_transaction_details(tx, block, blocks_db))
 
-    return jsonify(all_txs)
+    return all_txs
 
 
-# Get transaction details by its hash
-@app.route("/api/tx/<tx_hash>")
-def get_transaction_details(tx_hash):
+@app.get("/api/tx/{tx_hash}")
+async def get_transaction_details(tx_hash: str):
     blocks_db = get_blockchain_data()
     if not blocks_db:
-        return jsonify({"error": "Blockchain not found"}), 404
+        raise HTTPException(status_code=404, detail="Blockchain not found")
 
     for block in blocks_db:
         for tx in block.get("Txs", []):
@@ -357,32 +347,26 @@ def get_transaction_details(tx_hash):
                 formatted_tx["inputs"] = detailed_inputs
                 formatted_tx["outputs"] = detailed_outputs
 
-                return jsonify(formatted_tx)
+                return formatted_tx
 
-    return jsonify({"error": "Transaction not found"}), 404
+    raise HTTPException(status_code=404, detail="Transaction not found")
 
 
-# Get address details and its transaction history
-@app.route("/api/address/<public_address>")
-def get_address_details(public_address):
+@app.get("/api/address/{public_address}")
+async def get_address_details(public_address: str):
     try:
         target_h160 = decode_base58(public_address)
     except Exception as e:
-        app.logger.error(f"Error while decoding address{public_address}: {e}")
-        return jsonify({"error": "Address format invalid"}), 400
+        print(f"Error while decoding address{public_address}: {e}") 
+        raise HTTPException(status_code=400, detail="Address format invalid")
 
     blocks_db = get_blockchain_data()
     if not blocks_db:
-        return (
-            jsonify(
-                {
-                    "address": public_address,
-                    "transactions": [],
-                    "error": "Blockchain is empty",
-                }
-            ),
-            404,
-        )
+        return {
+            "address": public_address,
+            "transactions": [],
+            "error": "Blockchain is empty",
+        }
 
     total_received_kores = 0
     total_sent_kores = 0
@@ -468,23 +452,20 @@ def get_address_details(public_address):
 
     current_balance_kores = total_received_kores - total_sent_kores
 
-    return jsonify(
-        {
-            "address": public_address,
-            "total_received": total_received_kores / KOR,
-            "total_sent": total_sent_kores / KOR,
-            "current_balance": current_balance_kores / KOR,
-            "transaction_count": len(address_transactions),
-            "transactions": sorted(
-                address_transactions, key=lambda x: x["block_height"], reverse=True
-            ),
-        }
-    )
+    return {
+        "address": public_address,
+        "total_received": total_received_kores / KOR,
+        "total_sent": total_sent_kores / KOR,
+        "current_balance": current_balance_kores / KOR,
+        "transaction_count": len(address_transactions),
+        "transactions": sorted(
+            address_transactions, key=lambda x: x["block_height"], reverse=True
+        ),
+    }
 
 
-# Get current mempool stream
-@app.route("/api/mempool")
-def get_mempool():
+@app.get("/api/mempool")
+async def get_mempool():
     formatted_txs = []
     current_mempool = dict(MEMPOOL)
     for tx_id, tx_obj in current_mempool.items():
@@ -498,55 +479,51 @@ def get_mempool():
                 }
             )
         except Exception as e:
-            app.logger.error(f"Error while formating tx {tx_id} in mempool: {e}")
+            print(f"Error while formating tx {tx_id} in mempool: {e}")
             continue
-    return jsonify(formatted_txs)
+    return formatted_txs
 
 
-# Search for an address, a block or a transaction
-@app.route("/api/search/<query>")
-def search_blockchain(query):
+@app.get("/api/search/{query}")
+async def search_blockchain(query: str):
     blocks_db = get_blockchain_data()
     if not blocks_db:
-        return jsonify({"found": False})
+        return {"found": False}
 
     try:
         decode_base58(query)
-        return jsonify({"found": True, "type": "address", "identifier": query})
+        return {"found": True, "type": "address", "identifier": query}
     except Exception:
         pass
 
     if query.isdigit():
         for block in blocks_db:
             if block.get("Height") == int(query):
-                return jsonify(
-                    {
-                        "found": True,
-                        "type": "block",
-                        "identifier": block["BlockHeader"]["blockHash"],
-                    }
-                )
+                return {
+                    "found": True,
+                    "type": "block",
+                    "identifier": block["BlockHeader"]["blockHash"],
+                }
 
     if len(query) == 64:
         for block in blocks_db:
             if block["BlockHeader"]["blockHash"] == query:
-                return jsonify({"found": True, "type": "block", "identifier": query})
+                return {"found": True, "type": "block", "identifier": query}
             for tx in block.get("Txs", []):
                 if tx.get("TxId") == query:
-                    return jsonify(
-                        {"found": True, "type": "transaction", "identifier": query}
-                    )
+                    return {
+                        "found": True,
+                        "type": "transaction",
+                        "identifier": query
+                    }
 
-    return jsonify({"found": False})
+    return {"found": False}
 
-
-# ==============================================================================
-
-
-# Start API SERVER with Deamon
-def main(utxos, MemPool, port, localPort):
+def main(utxos, MemPool, port, host="0.0.0.0"):
     global UTXOS, MEMPOOL
     UTXOS = utxos
     MEMPOOL = MemPool
-    get_blockchain_data()
-    app.run(port=port)
+    get_blockchain_data() 
+    config = uvicorn.Config(app, host=host, port=port, log_level="info")
+    server = uvicorn.Server(config)
+    server.run()

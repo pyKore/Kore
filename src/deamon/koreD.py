@@ -7,7 +7,7 @@ from threading import Event, Thread
 
 sys.path.append(os.getcwd())
 
-from src.api.server import main as web_main
+from net.services.api_service import main as web_main
 from src.core.chain.managers.ChainManager import ChainManager
 from src.core.chain.managers.UTXOManager import UTXOManager
 from src.core.database.TxIndexDB import TxIndexDB
@@ -188,11 +188,11 @@ def main():
 
     # API Thread
     api_thread = Thread(
-        target=web_main, args=(utxos_db, mempool_db, api_port, p2p_port)
+        target=web_main, args=(utxos_db, mempool_db, api_port, host)
     )
     api_thread.daemon = True
     api_thread.start()
-    logger.info(f"API server started on port {api_port}")
+    logger.info(f"API server started on http://{host}:{api_port}")
 
     # RPC Thread
     rpc_thread = Thread(
